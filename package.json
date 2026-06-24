@@ -1,0 +1,22 @@
+{
+  "name": "reimbursement-management-api",
+  "version": "1.0.0",
+  "description": "Backend API for a reimbursement management tool with RBAC.",
+  "main": "src/server.js",
+  "type": "commonjs",
+  "scripts": {
+    "dev": "node src/server.js",
+    "db:migrate": "node scripts/migrate.js",
+    "db:seed-data": "node scripts/seed-cfo.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "express-session": "^1.19.0",
+    "pg": "^8.22.0"
+  }
+}

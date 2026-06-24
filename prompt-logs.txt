@@ -1,0 +1,35 @@
+PROMPT 1 — Project Setup & Scaffolding
+
+I'm building a backend API for a reimbursement management tool with role-based
+access control (RBAC). The stack is:
+- Node.js >= 20.10.2
+- Express.js (no TypeScript, plain JavaScript)
+- PostgreSQL
+- Cookie-based authentication
+ 
+Set up the project from scratch:
+1. Create a package.json with these exact scripts:
+   - "dev": starts the server on port 7002 (strictly)
+   - "db:migrate": runs all SQL migrations in order
+   - "db:seed-data": seeds only the CFO account
+ 
+2. Create the following folder structure:
+   src/
+     server.js        (entry point)
+     app.js           (express app setup)
+     config/db.js     (pg pool)
+     middleware/
+     modules/onboarding/
+     modules/roles/
+     modules/employees/
+     modules/reimbursements/
+     utils/
+   migrations/
+   scripts/
+ 
+3. Install these packages: express, pg, bcrypt, express-session, dotenv
+4. Create a .env.example with: PORT, DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD, SESSION_SECRET
+5. Create a .gitignore that ignores node_modules and .env
+ 
+Keep the code clean, SOLID, and ready to extend. No clever tricks — readable code only.
+ 
