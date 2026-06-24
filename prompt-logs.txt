@@ -75,3 +75,19 @@ In scripts/migrate.js:
 - Execute them in order using the pg pool
 - Log success or failure for each file
 - This is what npm run db:migrate calls
+
+prompt 3: Seed Script (CFO Account Only)
+
+Create scripts/seed.js that:
+1. Checks if a user with email 'cfo@org.com' already exists
+2. If not, inserts exactly this user (and ONLY this user — no other seed data):
+   - name: 'CFO'
+   - email: 'cfo@org.com'
+   - password: bcrypt hash of 'CFO#ORG@April2026' (use 10 salt rounds)
+   - role: 'CFO'
+3. If the CFO already exists, log a message and skip (idempotent)
+4. Close the DB connection after
+ 
+This is what npm run db:seed-data calls.
+Important: Do NOT seed any other accounts. The spec says seed ONLY the CFO.
+
