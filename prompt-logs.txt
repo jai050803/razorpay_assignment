@@ -91,3 +91,40 @@ Create scripts/seed.js that:
 This is what npm run db:seed-data calls.
 Important: Do NOT seed any other accounts. The spec says seed ONLY the CFO.
 
+prompt 4
+
+Set up stateless cookie-based JWT authentication for the application.
+
+In src/app.js:
+- Import and use 'cookie-parser' middleware globally before any routes.
+
+In src/utils/constants.js:
+- Export ROLES = { EMP: 'EMP', RM: 'RM', APE: 'APE', CFO: 'CFO' }
+- Export STATUSES = { PENDING: 'PENDING', APPROVED: 'APPROVED', REJECTED: 'REJECTED' }
+
+In src/utils/response.js:
+- Export successResponse(res, data, statusCode=200) — sends JSON { status: 'success', data }
+- Export errorResponse(res, message, statusCode=400) — sends JSON { status: 'error', message }
+
+In src/utils/validators.js:
+- Export isOrgEmail(email) — returns true if email explicitly ends with '@org.com'
+
+In src/middleware/auth.middleware.js:
+- Export a function 'requireAuth' that:
+  1. Reads the authentication cookie (e.g., named 'token') from req.cookies using cookie-parser.
+  2. If the cookie does not exist, immediately returns a 401 status using errorResponse(res, 'Unauthorized').
+  3. If it exists, verifies the JWT token using a JWT_SECRET environment variable (fallback to a secret string if not in .env).
+  4. Decodes the user ID from the token payload, fetches the full user profile from the database, and attaches it directly to req.user.
+  5. Calls next() if the user is verified and exists. If token verification fails or the user no longer exists in the DB, clear the cookie and return a 401 error.
+
+In src/middleware/role.middleware.js:
+- Export a factory function 'requireRole(...roles)' that:
+  1. Returns an Express middleware function.
+  2. Checks if the current authenticated user's role (req.user.role) is included in the allowed roles array.
+  3. If not included, returns a 403 status using errorResponse(res, 'Forbidden').
+  4. If included, calls next().
+
+Keep the code clean, modular, properly structured according to SOLID principles, and free of any TypeScript code.
+
+dont use express-session but use cookie-parser i have already installed cookie-parser and uninstalled express-session
+ 
