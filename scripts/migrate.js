@@ -14,8 +14,13 @@ const runMigrations = async () => {
     const filePath = path.join(migrationsDir, file);
     const sql = await fs.readFile(filePath, 'utf8');
 
-    console.log(`Running migration: ${file}`);
-    await pool.query(sql);
+    try {
+      await pool.query(sql);
+      console.log(`Migration succeeded: ${file}`);
+    } catch (error) {
+      console.error(`Migration failed: ${file}`);
+      throw error;
+    }
   }
 
   console.log('Migrations completed.');

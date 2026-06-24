@@ -33,3 +33,45 @@ Set up the project from scratch:
  
 Keep the code clean, SOLID, and ready to extend. No clever tricks — readable code only.
  
+
+PROMPT 2 — Database Config & Migration Files
+
+Create the PostgreSQL database config and all migration files for this project.
+ 
+In src/config/db.js:
+- Export a pg Pool using environment variables from .env
+- The pool should be used across the whole app (singleton pattern)
+ 
+Create four migration SQL files in migrations/ folder (run in order):
+ 
+migrations/001_create_users.sql:
+- Table: users
+- Columns: id (SERIAL PK), name (VARCHAR 255 NOT NULL), email (VARCHAR 255 UNIQUE NOT NULL),
+  password (VARCHAR 255 NOT NULL), role (VARCHAR 10, DEFAULT 'EMP'), created_at (TIMESTAMP DEFAULT NOW())
+- Valid roles will be: EMP, RM, APE, CFO
+ 
+migrations/002_create_employee_rm_assignments.sql:
+- Table: employee_rm_assignments
+- Columns: id (SERIAL PK), emp_id (INT FK → users.id), rm_id (INT FK → users.id),
+  created_at (TIMESTAMP DEFAULT NOW())
+- Constraint: UNIQUE(emp_id) — each EMP reports to exactly one RM
+ 
+migrations/003_create_reimbursements.sql:
+- Table: reimbursements
+- Columns: id (SERIAL PK), user_id (INT FK → users.id), title (VARCHAR 255 NOT NULL),
+  description (TEXT NOT NULL), amount (NUMERIC 12,2 NOT NULL),
+  status (VARCHAR 20 DEFAULT 'PENDING'), rm_approved (BOOLEAN DEFAULT FALSE),
+  ape_approved (BOOLEAN DEFAULT FALSE), created_at (TIMESTAMP DEFAULT NOW()),
+  updated_at (TIMESTAMP DEFAULT NOW())
+ 
+migrations/004_create_reimbursement_approvals.sql:
+- Table: reimbursement_approvals (audit log)
+- Columns: id (SERIAL PK), reimbursement_id (INT FK → reimbursements.id),
+  approver_id (INT FK → users.id), approver_role (VARCHAR 10 NOT NULL),
+  action (VARCHAR 20 NOT NULL), created_at (TIMESTAMP DEFAULT NOW())
+ 
+In scripts/migrate.js:
+- Read all .sql files from migrations/ folder, sorted alphabetically
+- Execute them in order using the pg pool
+- Log success or failure for each file
+- This is what npm run db:migrate calls
