@@ -463,3 +463,43 @@ Go through all endpoints and add robust edge case handling. Here's the full list
 Make sure all errors use the format: { "status": "error", "message": "..." }
 Make sure HTTP status codes are correct throughout.
  
+
+----------------------------------------------------------------------------------------------------------------------------
+
+PROMPT 14 — Final Cleanup & Wiring Everything Together
+
+
+Wire everything together in src/app.js:
+ 
+1. Import and apply middleware in this order:
+   - express.json() (parse JSON bodies)
+   - express-session (with SESSION_SECRET, httpOnly, maxAge)
+   - Routes
+ 
+2. Mount routes:
+   - /rest/onboardings → onboarding.routes.js
+   - /rest/roles → roles.routes.js
+   - /rest/employees → employees.routes.js
+   - /rest/reimbursements → reimbursements.routes.js
+ 
+3. Add a catch-all 404 handler at the bottom:
+   { "status": "error", "message": "Route not found" }
+ 
+4. Add a global error handler:
+   (err, req, res, next) → { "status": "error", "message": "Internal server error" }
+ 
+In src/server.js:
+   - Import app
+   - Listen on process.env.PORT || 7002
+   - Log: "Server running on port 7002"
+ 
+Verify the package.json scripts:
+   "dev": "node src/server.js"
+   "db:migrate": "node scripts/migrate.js"
+   "db:seed-data": "node scripts/seed.js"
+ 
+Do a final review:
+- All routes are under /rest prefix
+- Cookies are set correctly (httpOnly)
+- All response shapes match the spec exactly
+- No hardcoded secrets
