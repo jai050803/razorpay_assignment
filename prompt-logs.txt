@@ -91,7 +91,7 @@ Create scripts/seed.js that:
 This is what npm run db:seed-data calls.
 Important: Do NOT seed any other accounts. The spec says seed ONLY the CFO.
 
-prompt 4
+prompt 4 : Auth Middleware (Cookie Session)
 
 Set up stateless cookie-based JWT authentication for the application.
 
@@ -127,4 +127,43 @@ In src/middleware/role.middleware.js:
 Keep the code clean, modular, properly structured according to SOLID principles, and free of any TypeScript code.
 
 dont use express-session but use cookie-parser i have already installed cookie-parser and uninstalled express-session
+ 
+
+ prompt 5: Onboarding Module (Register, Login, Logout)
+
+ 
+Build the onboarding module. These are PUBLIC endpoints (no auth required).
+ 
+In src/modules/onboarding/onboarding.service.js:
+- registerUser({ name, email, password }):
+  - Validate all fields are present
+  - Validate email is @org.com domain
+  - Check email is not already taken → 409 if taken
+  - Hash password with bcrypt (10 rounds)
+  - Insert user into DB with role = 'EMP'
+  - Return the created user (without password)
+ 
+- loginUser({ email, password }):
+  - Validate fields are present
+  - Validate email is @org.com domain
+  - Find user by email → 401 if not found
+  - Compare password with bcrypt → 401 if wrong
+  - Return the user (without password)
+ 
+In src/modules/onboarding/onboarding.controller.js:
+- register(req, res): calls service, sets req.session.userId on success
+- login(req, res): calls service, sets req.session.userId on success
+- logout(req, res): destroys req.session, clears cookie
+ 
+In src/modules/onboarding/onboarding.routes.js:
+- POST /register → register controller
+- POST /login → login controller
+- POST /logout → logout controller
+- These will be mounted under /rest/onboardings in app.js
+ 
+Error format for all failures:
+{ "status": "error", "message": "descriptive error message" }
+ 
+Success format for register/login:
+{ "status": "success", "data": { "userId": ..., "name": ..., "email": ..., "role": ... } }
  
