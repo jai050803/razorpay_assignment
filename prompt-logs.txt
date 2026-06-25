@@ -166,4 +166,26 @@ Error format for all failures:
  
 Success format for register/login:
 { "status": "success", "data": { "userId": ..., "name": ..., "email": ..., "role": ... } }
+
+PROMPT 6 — Role Assignment Endpoint
+
+Build the roles module.
  
+In src/modules/roles/roles.service.js:
+- assignRole({ userId, role }):
+  - Validate userId and role are provided
+  - Validate role is one of: EMP, RM, APE, CFO
+  - Find user by userId → 404 if not found
+  - Update user's role in DB
+  - Return updated user
+ 
+In src/modules/roles/roles.controller.js:
+- assignRole(req, res): calls service, returns success response
+ 
+In src/modules/roles/roles.routes.js:
+- POST /assign → [requireAuth, requireRole('CFO')] → assignRole controller
+- Mount under /rest/roles in app.js
+ 
+When a user's role changes (e.g., EMP → RM), consider if any existing
+employee_rm_assignments need to be cleaned up. If an EMP becomes RM, their
+emp_id entry should be removed from employee_rm_assignments.
