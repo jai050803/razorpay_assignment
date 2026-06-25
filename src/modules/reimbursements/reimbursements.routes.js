@@ -1,0 +1,16 @@
+const express = require('express');
+const reimbursementsController = require('./reimbursements.controller');
+const { requireAuth } = require('../../middleware/auth.middleware');
+const { requireRole } = require('../../middleware/role.middleware');
+const { ROLES } = require('../../utils/constants');
+
+const router = express.Router();
+
+router.post(
+  '/',
+  requireAuth,
+  requireRole(ROLES.EMP),
+  reimbursementsController.createReimbursement
+);
+
+module.exports = router;

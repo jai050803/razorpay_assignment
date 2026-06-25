@@ -3,6 +3,7 @@ const cookieParser = require('cookie-parser');
 const onboardingRoutes = require('./modules/onboarding/onboarding.routes');
 const rolesRoutes = require('./modules/roles/roles.routes');
 const employeesRoutes = require('./modules/employees/employees.routes');
+const reimbursementsRoutes = require('./modules/reimbursements/reimbursements.routes');
 
 const app = express();
 
@@ -17,5 +18,6 @@ app.get('/health', (req, res) => {
 app.use('/rest/onboardings', onboardingRoutes);
 app.use('/rest/roles', rolesRoutes);
 app.use('/rest/employees', employeesRoutes);
+app.use('/rest/reimbursements', reimbursementsRoutes);
 
 module.exports = app;

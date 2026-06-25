@@ -32,7 +32,8 @@ Set up the project from scratch:
 5. Create a .gitignore that ignores node_modules and .env
  
 Keep the code clean, SOLID, and ready to extend. No clever tricks — readable code only.
- 
+
+----------------------------------------------------------------------------------------------------------------- 
 
 PROMPT 2 — Database Config & Migration Files
 
@@ -76,6 +77,8 @@ In scripts/migrate.js:
 - Log success or failure for each file
 - This is what npm run db:migrate calls
 
+-----------------------------------------------------------------------------------------------------
+
 prompt 3: Seed Script (CFO Account Only)
 
 Create scripts/seed.js that:
@@ -90,6 +93,8 @@ Create scripts/seed.js that:
  
 This is what npm run db:seed-data calls.
 Important: Do NOT seed any other accounts. The spec says seed ONLY the CFO.
+
+---------------------------------------------------------------------------------------------------------
 
 prompt 4 : Auth Middleware (Cookie Session)
 
@@ -129,7 +134,9 @@ Keep the code clean, modular, properly structured according to SOLID principles,
 dont use express-session but use cookie-parser i have already installed cookie-parser and uninstalled express-session
  
 
- prompt 5: Onboarding Module (Register, Login, Logout)
+--------------------------------------------------------------------------------------------------
+
+prompt 5: Onboarding Module (Register, Login, Logout)
 
  
 Build the onboarding module. These are PUBLIC endpoints (no auth required).
@@ -167,6 +174,8 @@ Error format for all failures:
 Success format for register/login:
 { "status": "success", "data": { "userId": ..., "name": ..., "email": ..., "role": ... } }
 
+------------------------------------------------------------------------------------------------------ 
+
 PROMPT 6 — Role Assignment Endpoint
 
 Build the roles module.
@@ -190,6 +199,8 @@ When a user's role changes (e.g., EMP → RM), consider if any existing
 employee_rm_assignments need to be cleaned up. If an EMP becomes RM, their
 emp_id entry should be removed from employee_rm_assignments.
 
+
+----------------------------------------------------------------------------------------------- 
 
 PROMPT 7 — Employee Listing with Role-Based Visibility
 
@@ -216,6 +227,7 @@ In src/modules/employees/employees.routes.js:
  
 Note: Map DB column 'id' to 'userId' in the response.
  
+------------------------------------------------------------------------------------------------
 
 PROMPT 8 — Employee RM Assignment (POST + DELETE)
 
@@ -242,5 +254,30 @@ In employees.routes.js, add:
 - POST /assign → [requireAuth, requireRole('CFO')] → assignEmployee controller
 - DELETE /assign → [requireAuth, requireRole('CFO')] → removeEmployee controller
  
+---------------------------------------------------------------------------------------------
+PROMPT 9 — Create Reimbursement (EMP only)
 
+Build the reimbursements module — creation part.
+ 
+In src/modules/reimbursements/reimbursements.service.js:
+- createReimbursement({ userId, title, description, amount }):
+  - Validate title, description, amount are present
+  - Validate amount is a positive number (> 0)
+  - Insert into reimbursements table with:
+    - user_id = userId
+    - status = 'PENDING'
+    - rm_approved = false
+    - ape_approved = false
+  - Return the created reimbursement
+ 
+In src/modules/reimbursements/reimbursements.controller.js:
+- createReimbursement(req, res): calls service with req.user.id and body fields
+ 
+In src/modules/reimbursements/reimbursements.routes.js:
+- POST / → [requireAuth, requireRole('EMP')] → createReimbursement controller
+- Mount under /rest/reimbursements in app.js
+ 
+Success response shape:
+{ "status": "success", "data": { "reimbursement": { "title", "description", "amount", "status" } } }
+ 
  
