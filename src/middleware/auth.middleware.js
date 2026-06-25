@@ -3,7 +3,15 @@ const { pool } = require('../config/db');
 const { errorResponse } = require('../utils/response');
 
 const TOKEN_COOKIE_NAME = 'token';
-const JWT_SECRET = process.env.JWT_SECRET || 'development-jwt-secret';
+const getJwtSecret = () => {
+  const secret = process.env.JWT_SECRET || process.env.SESSION_SECRET;
+
+  if (!secret) {
+    throw new Error('JWT secret is not configured');
+  }
+
+  return secret;
+};
 
 const clearAuthCookie = (res) => {
   res.clearCookie(TOKEN_COOKIE_NAME, {
@@ -21,7 +29,7 @@ const requireAuth = async (req, res, next) => {
   }
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET);
+    const decoded = jwt.verify(token, getJwtSecret());
     const userId = decoded.userId || decoded.id;
 
     if (!userId) {

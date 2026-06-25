@@ -3,10 +3,10 @@ require('dotenv').config();
 const app = require('./app');
 const { pool } = require('./config/db');
 
-const PORT = 7002;
+const PORT = process.env.PORT || 7002;
 
 const server = app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
 
 const shutdown = async () => {

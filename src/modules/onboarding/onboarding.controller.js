@@ -3,10 +3,18 @@ const { registerUser, loginUser } = require('./onboarding.service');
 const { successResponse, errorResponse } = require('../../utils/response');
 
 const TOKEN_COOKIE_NAME = 'token';
-const JWT_SECRET = process.env.JWT_SECRET || 'development-jwt-secret';
+const getJwtSecret = () => {
+  const secret = process.env.JWT_SECRET || process.env.SESSION_SECRET;
+
+  if (!secret) {
+    throw new Error('JWT secret is not configured');
+  }
+
+  return secret;
+};
 
 const setAuthCookie = (res, userId) => {
-  const token = jwt.sign({ userId }, JWT_SECRET, { expiresIn: '1d' });
+  const token = jwt.sign({ userId }, getJwtSecret(), { expiresIn: '1d' });
 
   res.cookie(TOKEN_COOKIE_NAME, token, {
     httpOnly: true,
