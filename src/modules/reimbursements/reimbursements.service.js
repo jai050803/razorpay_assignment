@@ -18,6 +18,25 @@ const mapReimbursementResponse = (reimbursement) => ({
   apeApproved: reimbursement.ape_approved,
 });
 
+const computeEmployeeStatus = (reimbursement) => {
+  if (reimbursement.status === STATUSES.REJECTED) {
+    return STATUSES.REJECTED;
+  }
+
+  if (reimbursement.rm_approved && reimbursement.ape_approved) {
+    return STATUSES.APPROVED;
+  }
+
+  return STATUSES.PENDING;
+};
+
+const mapListReimbursement = (reimbursement, status) => ({
+  title: reimbursement.title,
+  description: reimbursement.description,
+  amount: Number(reimbursement.amount),
+  status,
+});
+
 const validateApprovalRequest = ({ reimbursementId, status }) => {
   if (!reimbursementId) {
     throw new ServiceError('reimbursementId is required', 400);
@@ -167,6 +186,86 @@ const createReimbursement = async ({ userId, title, description, amount }) => {
   return mapReimbursementResponse(result.rows[0]);
 };
 
+const listReimbursements = async (requestingUser) => {
+  if (!requestingUser || !requestingUser.role) {
+    throw new ServiceError('Forbidden', 403);
+  }
+
+  if (requestingUser.role === ROLES.EMP) {
+    const result = await pool.query(
+      `
+        SELECT title, description, amount, status, rm_approved, ape_approved
+        FROM reimbursements
+        WHERE user_id = $1
+        ORDER BY created_at DESC
+      `,
+      [requestingUser.id]
+    );
+
+    return result.rows.map((reimbursement) =>
+      mapListReimbursement(reimbursement, computeEmployeeStatus(reimbursement))
+    );
+  }
+
+  if (requestingUser.role === ROLES.RM) {
+    const result = await pool.query(
+      `
+        SELECT reimbursements.title, reimbursements.description, reimbursements.amount
+        FROM reimbursements
+        INNER JOIN employee_rm_assignments
+          ON employee_rm_assignments.emp_id = reimbursements.user_id
+        WHERE employee_rm_assignments.rm_id = $1
+          AND reimbursements.rm_approved = false
+          AND reimbursements.status != $2
+        ORDER BY reimbursements.created_at DESC
+      `,
+      [requestingUser.id, STATUSES.REJECTED]
+    );
+
+    return result.rows.map((reimbursement) =>
+      mapListReimbursement(reimbursement, STATUSES.PENDING)
+    );
+  }
+
+  if (requestingUser.role === ROLES.APE) {
+    const result = await pool.query(
+      `
+        SELECT title, description, amount
+        FROM reimbursements
+        WHERE rm_approved = true
+          AND ape_approved = false
+          AND status != $1
+        ORDER BY created_at DESC
+      `,
+      [STATUSES.REJECTED]
+    );
+
+    return result.rows.map((reimbursement) =>
+      mapListReimbursement(reimbursement, STATUSES.PENDING)
+    );
+  }
+
+  if (requestingUser.role === ROLES.CFO) {
+    const result = await pool.query(
+      `
+        SELECT title, description, amount
+        FROM reimbursements
+        WHERE rm_approved = true
+          AND ape_approved = true
+          AND status = $1
+        ORDER BY updated_at DESC
+      `,
+      [STATUSES.APPROVED]
+    );
+
+    return result.rows.map((reimbursement) =>
+      mapListReimbursement(reimbursement, STATUSES.APPROVED)
+    );
+  }
+
+  throw new ServiceError('Forbidden', 403);
+};
+
 const updateReimbursementStatus = async ({ reimbursementId, status, requestingUser }) => {
   validateApprovalRequest({ reimbursementId, status });
 
@@ -231,5 +330,6 @@ const updateReimbursementStatus = async ({ reimbursementId, status, requestingUs
 module.exports = {
   ServiceError,
   createReimbursement,
+  listReimbursements,
   updateReimbursementStatus,
 };

@@ -329,3 +329,44 @@ Route:
 - PATCH / → [requireAuth, requireRole('RM', 'APE', 'CFO')] → updateStatus controller
  
 Request body: { "reimbursementId": 7, "status": "APPROVED" }
+
+
+PROMPT 11 — Get Reimbursements (Role-Filtered Views)
+
+
+Add the GET /rest/reimbursements endpoint with role-based filtering.
+ 
+In reimbursements.service.js, add:
+- listReimbursements(requestingUser):
+ 
+  If EMP:
+  - Return all reimbursements where user_id = requestingUser.id
+  - For each reimbursement, compute the status:
+    - If db status = 'REJECTED' → show 'REJECTED'
+    - If rm_approved = true AND ape_approved = true → show 'APPROVED'
+    - Otherwise → show 'PENDING'
+  - Map to: { title, description, amount, status }
+ 
+  If RM:
+  - Find all emp_ids reporting to this RM (from employee_rm_assignments)
+  - Return reimbursements where user_id IN (those emp_ids) AND rm_approved = false
+    AND status != 'REJECTED'
+  - These are the ones waiting for RM's approval
+  - Map to: { title, description, amount, status: 'PENDING' }
+ 
+  If APE:
+  - Return reimbursements where rm_approved = true AND ape_approved = false
+    AND status != 'REJECTED'
+  - These are RM-approved but not yet APE-approved
+  - Map to: { title, description, amount, status: 'PENDING' }
+ 
+  If CFO:
+  - Return reimbursements where rm_approved = true AND ape_approved = true
+    AND status = 'APPROVED'
+  - Map to: { title, description, amount, status: 'APPROVED' }
+ 
+Route:
+- GET / → [requireAuth] → listReimbursements controller
+Response: { "status": "success", "data": { "reimbursements": [...] } }
+ 
+ 

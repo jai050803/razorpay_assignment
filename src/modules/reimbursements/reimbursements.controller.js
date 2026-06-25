@@ -23,6 +23,15 @@ const createReimbursement = async (req, res) => {
   }
 };
 
+const listReimbursements = async (req, res) => {
+  try {
+    const reimbursements = await reimbursementsService.listReimbursements(req.user);
+    return successResponse(res, { reimbursements });
+  } catch (error) {
+    return handleError(res, error);
+  }
+};
+
 const updateStatus = async (req, res) => {
   try {
     const reimbursement = await reimbursementsService.updateReimbursementStatus({
@@ -39,5 +48,6 @@ const updateStatus = async (req, res) => {
 
 module.exports = {
   createReimbursement,
+  listReimbursements,
   updateStatus,
 };
