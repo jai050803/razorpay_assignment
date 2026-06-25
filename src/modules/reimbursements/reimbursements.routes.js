@@ -13,4 +13,11 @@ router.post(
   reimbursementsController.createReimbursement
 );
 
+router.patch(
+  '/',
+  requireAuth,
+  requireRole(ROLES.RM, ROLES.APE, ROLES.CFO),
+  reimbursementsController.updateStatus
+);
+
 module.exports = router;

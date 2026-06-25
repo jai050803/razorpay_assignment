@@ -23,6 +23,21 @@ const createReimbursement = async (req, res) => {
   }
 };
 
+const updateStatus = async (req, res) => {
+  try {
+    const reimbursement = await reimbursementsService.updateReimbursementStatus({
+      reimbursementId: req.body.reimbursementId,
+      status: req.body.status,
+      requestingUser: req.user,
+    });
+
+    return successResponse(res, { reimbursement });
+  } catch (error) {
+    return handleError(res, error);
+  }
+};
+
 module.exports = {
   createReimbursement,
+  updateStatus,
 };

@@ -280,4 +280,52 @@ In src/modules/reimbursements/reimbursements.routes.js:
 Success response shape:
 { "status": "success", "data": { "reimbursement": { "title", "description", "amount", "status" } } }
  
+-----------------------------------------------------------------------------------------------------------------
+
+PROMPT 10 — Patch Reimbursement (Approve/Reject with Dual-Approval Logic)
+
+
+Add the PATCH endpoint for approving or rejecting reimbursements.
  
+This is the most complex part. Understand the approval flow:
+- A reimbursement has two internal flags: rm_approved and ape_approved
+- Status shown to EMP is computed: APPROVED only when both flags are true
+- Rejection by anyone → immediately sets status = 'REJECTED' (no further changes)
+- RM can only act on reimbursements from their own EMPs
+- APE can only act on reimbursements where rm_approved = true (RM has already approved)
+- CFO acts like a super-approver (can approve/reject anything still pending)
+ 
+In reimbursements.service.js, add:
+- updateReimbursementStatus({ reimbursementId, status, requestingUser }):
+  - Validate reimbursementId and status are provided
+  - Validate status is 'APPROVED' or 'REJECTED'
+  - Fetch the reimbursement → 404 if not found
+  - If reimbursement.status === 'REJECTED' → 400 (already rejected)
+  - If reimbursement.status === 'APPROVED' → 400 (already fully approved)
+  
+  Role-specific checks:
+  - If RM: verify the EMP (reimbursement.user_id) is in their team via employee_rm_assignments
+  - If APE: verify rm_approved = true (RM has already approved this)
+  - If CFO: no additional check needed
+  
+  On REJECTED:
+  - Set reimbursements.status = 'REJECTED'
+  
+  On APPROVED by RM:
+  - Set rm_approved = true
+  - If ape_approved is also true: set status = 'APPROVED'
+  
+  On APPROVED by APE:
+  - Set ape_approved = true
+  - If rm_approved is also true: set status = 'APPROVED'
+  
+  On APPROVED by CFO:
+  - Set both rm_approved = true and ape_approved = true, status = 'APPROVED'
+  
+  Always: insert a row into reimbursement_approvals for audit trail
+  Always: update reimbursements.updated_at = NOW()
+ 
+Route:
+- PATCH / → [requireAuth, requireRole('RM', 'APE', 'CFO')] → updateStatus controller
+ 
+Request body: { "reimbursementId": 7, "status": "APPROVED" }
