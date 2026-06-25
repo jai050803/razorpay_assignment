@@ -17,7 +17,6 @@
 ### 1. Clone & install
 ```bash
 git clone <your-repo-url>
-cd razorpay-reimbursements
 npm install
 ```
  
@@ -52,11 +51,12 @@ npm run dev
 PORT=7002
 DB_HOST=localhost
 DB_PORT=5432
-DB_NAME=razorpay_reimbursements
+DB_NAME=replace_with_your_database_name
 DB_USER=postgres
 DB_PASSWORD=yourpassword
 SESSION_SECRET=your_session_secret_here
-NODE_ENV=development
+JWT_SECRET=replace-with-a-secure-jwt-secret
+
 ```
  
 ---
