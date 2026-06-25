@@ -16,6 +16,19 @@ const mapUsers = (users) =>
     role: user.role,
   }));
 
+const findUserById = async (userId) => {
+  const result = await pool.query(
+    `
+      SELECT id, name, email, role
+      FROM users
+      WHERE id = $1
+    `,
+    [userId]
+  );
+
+  return result.rows[0];
+};
+
 const listEmployees = async (requestingUser) => {
   if (!requestingUser || !requestingUser.role) {
     throw new ServiceError('Forbidden', 403);
@@ -73,7 +86,93 @@ const listEmployees = async (requestingUser) => {
   throw new ServiceError('Forbidden', 403);
 };
 
+const assignEmployeeToRM = async ({ empUserId, rmUserId }) => {
+  if (!empUserId) {
+    throw new ServiceError('empUserId is required', 400);
+  }
+
+  if (!rmUserId) {
+    throw new ServiceError('rmUserId is required', 400);
+  }
+
+  const empUser = await findUserById(empUserId);
+
+  if (!empUser) {
+    throw new ServiceError('Employee user not found', 404);
+  }
+
+  if (empUser.role !== ROLES.EMP) {
+    throw new ServiceError('User must have EMP role', 400);
+  }
+
+  const rmUser = await findUserById(rmUserId);
+
+  if (!rmUser) {
+    throw new ServiceError('RM user not found', 404);
+  }
+
+  if (rmUser.role !== ROLES.RM) {
+    throw new ServiceError('User must have RM role', 400);
+  }
+
+  const assignmentResult = await pool.query(
+    'SELECT id FROM employee_rm_assignments WHERE emp_id = $1',
+    [empUserId]
+  );
+
+  if (assignmentResult.rowCount > 0) {
+    throw new ServiceError('Employee is already assigned to an RM', 409);
+  }
+
+  await pool.query(
+    `
+      INSERT INTO employee_rm_assignments (emp_id, rm_id)
+      VALUES ($1, $2)
+    `,
+    [empUserId, rmUserId]
+  );
+
+  return { message: 'Employee assigned to RM successfully' };
+};
+
+const removeEmployeeFromRM = async ({ empUserId, rmUserId }) => {
+  if (!empUserId) {
+    throw new ServiceError('empUserId is required', 400);
+  }
+
+  if (!rmUserId) {
+    throw new ServiceError('rmUserId is required', 400);
+  }
+
+  const assignmentResult = await pool.query(
+    `
+      SELECT id
+      FROM employee_rm_assignments
+      WHERE emp_id = $1
+        AND rm_id = $2
+    `,
+    [empUserId, rmUserId]
+  );
+
+  if (assignmentResult.rowCount === 0) {
+    throw new ServiceError('Assignment not found', 404);
+  }
+
+  await pool.query(
+    `
+      DELETE FROM employee_rm_assignments
+      WHERE emp_id = $1
+        AND rm_id = $2
+    `,
+    [empUserId, rmUserId]
+  );
+
+  return { message: 'Employee removed from RM successfully' };
+};
+
 module.exports = {
   ServiceError,
   listEmployees,
+  assignEmployeeToRM,
+  removeEmployeeFromRM,
 };

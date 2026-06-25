@@ -17,6 +17,26 @@ const listEmployees = async (req, res) => {
   }
 };
 
+const assignEmployee = async (req, res) => {
+  try {
+    const result = await employeesService.assignEmployeeToRM(req.body);
+    return successResponse(res, result, 201);
+  } catch (error) {
+    return handleError(res, error);
+  }
+};
+
+const removeEmployee = async (req, res) => {
+  try {
+    const result = await employeesService.removeEmployeeFromRM(req.body);
+    return successResponse(res, result);
+  } catch (error) {
+    return handleError(res, error);
+  }
+};
+
 module.exports = {
   listEmployees,
+  assignEmployee,
+  removeEmployee,
 };

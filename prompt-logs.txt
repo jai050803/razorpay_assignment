@@ -216,3 +216,31 @@ In src/modules/employees/employees.routes.js:
  
 Note: Map DB column 'id' to 'userId' in the response.
  
+
+PROMPT 8 — Employee RM Assignment (POST + DELETE)
+
+
+Add the assign/unassign endpoints to the employees module.
+ 
+In src/modules/employees/employees.service.js, add:
+ 
+- assignEmployeeToRM({ empUserId, rmUserId }):
+  - Validate both IDs are provided
+  - Find empUser → 404 if not found; verify role is 'EMP' → 400 if not
+  - Find rmUser → 404 if not found; verify role is 'RM' → 400 if not
+  - Check if EMP is already assigned to an RM → 409 if already assigned
+  - Insert into employee_rm_assignments
+  - Return success
+ 
+- removeEmployeeFromRM({ empUserId, rmUserId }):
+  - Validate both IDs are provided
+  - Check the assignment exists → 404 if not
+  - Delete from employee_rm_assignments where emp_id = empUserId AND rm_id = rmUserId
+  - Return success
+ 
+In employees.routes.js, add:
+- POST /assign → [requireAuth, requireRole('CFO')] → assignEmployee controller
+- DELETE /assign → [requireAuth, requireRole('CFO')] → removeEmployee controller
+ 
+
+ 
