@@ -18,7 +18,9 @@ const mapUserResponse = (user) => ({
 });
 
 const validateRequiredFields = (fields) => {
-  const missingField = Object.entries(fields).find(([, value]) => !value);
+  const missingField = Object.entries(fields).find(
+    ([, value]) => value === undefined || value === null || value === ''
+  );
 
   if (missingField) {
     throw new ServiceError(`${missingField[0]} is required`, 400);
@@ -32,6 +34,10 @@ const registerUser = async ({ name, email, password }) => {
     throw new ServiceError('Email must be an @org.com address', 400);
   }
 
+  if (password.length < 6) {
+    throw new ServiceError('Password must be at least 6 characters long', 400);
+  }
+
   const existingUser = await pool.query('SELECT id FROM users WHERE email = $1', [email]);
 
   if (existingUser.rowCount > 0) {
@@ -40,14 +46,24 @@ const registerUser = async ({ name, email, password }) => {
 
   const hashedPassword = await bcrypt.hash(password, 10);
 
-  const result = await pool.query(
-    `
-      INSERT INTO users (name, email, password, role)
-      VALUES ($1, $2, $3, $4)
-      RETURNING id, name, email, role
-    `,
-    [name, email, hashedPassword, ROLES.EMP]
-  );
+  let result;
+
+  try {
+    result = await pool.query(
+      `
+        INSERT INTO users (name, email, password, role)
+        VALUES ($1, $2, $3, $4)
+        RETURNING id, name, email, role
+      `,
+      [name, email, hashedPassword, ROLES.EMP]
+    );
+  } catch (error) {
+    if (error.code === '23505') {
+      throw new ServiceError('Email is already taken', 409);
+    }
+
+    throw error;
+  }
 
   return mapUserResponse(result.rows[0]);
 };

@@ -17,9 +17,17 @@ const mapUserResponse = (user) => ({
   role: user.role,
 });
 
+const isPositiveInteger = (value) => {
+  return Number.isInteger(Number(value)) && Number(value) > 0;
+};
+
 const assignRole = async ({ userId, role }) => {
   if (!userId) {
     throw new ServiceError('userId is required', 400);
+  }
+
+  if (!isPositiveInteger(userId)) {
+    throw new ServiceError('userId must be a valid user ID', 400);
   }
 
   if (!role) {
@@ -28,6 +36,10 @@ const assignRole = async ({ userId, role }) => {
 
   if (!VALID_ROLES.includes(role)) {
     throw new ServiceError('Invalid role', 400);
+  }
+
+  if (role === ROLES.CFO) {
+    throw new ServiceError('CFO role cannot be assigned', 400);
   }
 
   const client = await pool.connect();

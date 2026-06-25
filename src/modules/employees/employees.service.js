@@ -29,6 +29,10 @@ const findUserById = async (userId) => {
   return result.rows[0];
 };
 
+const isPositiveInteger = (value) => {
+  return Number.isInteger(Number(value)) && Number(value) > 0;
+};
+
 const listEmployees = async (requestingUser) => {
   if (!requestingUser || !requestingUser.role) {
     throw new ServiceError('Forbidden', 403);
@@ -91,8 +95,16 @@ const assignEmployeeToRM = async ({ empUserId, rmUserId }) => {
     throw new ServiceError('empUserId is required', 400);
   }
 
+  if (!isPositiveInteger(empUserId)) {
+    throw new ServiceError('empUserId must be a valid user ID', 400);
+  }
+
   if (!rmUserId) {
     throw new ServiceError('rmUserId is required', 400);
+  }
+
+  if (!isPositiveInteger(rmUserId)) {
+    throw new ServiceError('rmUserId must be a valid user ID', 400);
   }
 
   const empUser = await findUserById(empUserId);
@@ -124,13 +136,21 @@ const assignEmployeeToRM = async ({ empUserId, rmUserId }) => {
     throw new ServiceError('Employee is already assigned to an RM', 409);
   }
 
-  await pool.query(
-    `
-      INSERT INTO employee_rm_assignments (emp_id, rm_id)
-      VALUES ($1, $2)
-    `,
-    [empUserId, rmUserId]
-  );
+  try {
+    await pool.query(
+      `
+        INSERT INTO employee_rm_assignments (emp_id, rm_id)
+        VALUES ($1, $2)
+      `,
+      [empUserId, rmUserId]
+    );
+  } catch (error) {
+    if (error.code === '23505') {
+      throw new ServiceError('Employee is already assigned to an RM', 409);
+    }
+
+    throw error;
+  }
 
   return { message: 'Employee assigned to RM successfully' };
 };
@@ -140,8 +160,16 @@ const removeEmployeeFromRM = async ({ empUserId, rmUserId }) => {
     throw new ServiceError('empUserId is required', 400);
   }
 
+  if (!isPositiveInteger(empUserId)) {
+    throw new ServiceError('empUserId must be a valid user ID', 400);
+  }
+
   if (!rmUserId) {
     throw new ServiceError('rmUserId is required', 400);
+  }
+
+  if (!isPositiveInteger(rmUserId)) {
+    throw new ServiceError('rmUserId must be a valid user ID', 400);
   }
 
   const assignmentResult = await pool.query(

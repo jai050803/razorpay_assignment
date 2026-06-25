@@ -37,9 +37,17 @@ const mapListReimbursement = (reimbursement, status) => ({
   status,
 });
 
+const isPositiveInteger = (value) => {
+  return Number.isInteger(Number(value)) && Number(value) > 0;
+};
+
 const validateApprovalRequest = ({ reimbursementId, status }) => {
   if (!reimbursementId) {
     throw new ServiceError('reimbursementId is required', 400);
+  }
+
+  if (!isPositiveInteger(reimbursementId)) {
+    throw new ServiceError('reimbursementId must be a valid reimbursement ID', 400);
   }
 
   if (!status) {
@@ -162,7 +170,11 @@ const createReimbursement = async ({ userId, title, description, amount }) => {
 
   const numericAmount = Number(amount);
 
-  if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
+  if (!Number.isFinite(numericAmount)) {
+    throw new ServiceError('amount must be a number', 400);
+  }
+
+  if (numericAmount <= 0) {
     throw new ServiceError('amount must be a positive number', 400);
   }
 
@@ -269,6 +281,10 @@ const listReimbursements = async (requestingUser) => {
 const listReimbursementsForUser = async ({ targetUserId, requestingUser }) => {
   if (!targetUserId) {
     throw new ServiceError('userId is required', 400);
+  }
+
+  if (!isPositiveInteger(targetUserId)) {
+    throw new ServiceError('userId must be a valid user ID', 400);
   }
 
   const targetUserResult = await pool.query(

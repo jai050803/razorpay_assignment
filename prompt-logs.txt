@@ -398,3 +398,68 @@ In reimbursements.service.js, add:
  
 Route:
 - GET /:userId → [requireAuth] → listReimbursementsForUser controller
+
+
+---------------------------------------------------------------------------------------------------------------
+
+PROMPT 13 — Edge Case Handling & Input Validation
+
+
+Go through all endpoints and add robust edge case handling. Here's the full list:
+ 
+1. Register:
+   - Missing name, email, or password → 400
+   - Email not @org.com → 400
+   - Email already registered → 409
+   - Password too short (< 6 chars) → 400
+ 
+2. Login:
+   - Missing fields → 400
+   - Email not @org.com → 400
+   - User not found → 401 (don't reveal if email exists)
+   - Wrong password → 401
+ 
+3. Roles assign:
+   - Missing userId or role → 400
+   - Invalid role string → 400
+   - User not found → 404
+   - Trying to assign CFO role (decide: allow only CFO to assign CFO, or block entirely)
+   - If user was EMP and becomes RM: clean up their entry from employee_rm_assignments
+ 
+4. Employee listing:
+   - EMP calling this → 403
+ 
+5. Employee assign (POST):
+   - Missing empUserId or rmUserId → 400
+   - empUser not found → 404
+   - rmUser not found → 404
+   - empUser.role !== 'EMP' → 400 (can only assign EMPs)
+   - rmUser.role !== 'RM' → 400 (can only assign to RMs)
+   - EMP already has an RM → 409
+ 
+6. Employee unassign (DELETE):
+   - Missing fields → 400
+   - Assignment does not exist → 404
+ 
+7. Create reimbursement:
+   - Missing title, description, amount → 400
+   - Amount is not a number → 400
+   - Amount is <= 0 → 400
+ 
+8. Patch reimbursement:
+   - Missing reimbursementId or status → 400
+   - Invalid status (not APPROVED or REJECTED) → 400
+   - Reimbursement not found → 404
+   - Already rejected → 400
+   - Already approved → 400
+   - RM acting on EMP not in their team → 403
+   - APE acting on reimbursement not yet RM-approved → 400
+ 
+9. Get reimbursements by userId:
+   - Target user not found → 404
+   - Target user is not EMP → 400
+   - Requesting RM, target EMP not in their team → 403
+ 
+Make sure all errors use the format: { "status": "error", "message": "..." }
+Make sure HTTP status codes are correct throughout.
+ 
