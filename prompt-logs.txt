@@ -189,3 +189,30 @@ In src/modules/roles/roles.routes.js:
 When a user's role changes (e.g., EMP → RM), consider if any existing
 employee_rm_assignments need to be cleaned up. If an EMP becomes RM, their
 emp_id entry should be removed from employee_rm_assignments.
+
+
+PROMPT 7 — Employee Listing with Role-Based Visibility
+
+
+Build the employee listing part of the employees module.
+ 
+In src/modules/employees/employees.service.js:
+- listEmployees(requestingUser):
+  - If role is EMP: throw 403 Forbidden
+  - If role is RM: return all users where role='EMP' AND emp_id in employee_rm_assignments
+    with rm_id = requestingUser.id
+  - If role is APE: return all users where role IN ('EMP', 'RM')
+  - If role is CFO: return all users except the CFO themselves (or include — decide)
+  - Return array of { userId: id, name, email, role }
+ 
+In src/modules/employees/employees.controller.js:
+- listEmployees(req, res): calls service, returns:
+  { "status": "success", "data": { "users": [...] } }
+ 
+In src/modules/employees/employees.routes.js:
+- GET / → [requireAuth] → listEmployees controller
+  (role check is inside the service/controller, not the route middleware)
+- Mount under /rest/employees in app.js
+ 
+Note: Map DB column 'id' to 'userId' in the response.
+ 
