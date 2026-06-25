@@ -7,6 +7,7 @@ const { ROLES } = require('../../utils/constants');
 const router = express.Router();
 
 router.get('/', requireAuth, reimbursementsController.listReimbursements);
+router.get('/:userId', requireAuth, reimbursementsController.listReimbursementsForUser);
 
 router.post(
   '/',

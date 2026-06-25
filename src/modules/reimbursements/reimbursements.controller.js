@@ -32,6 +32,19 @@ const listReimbursements = async (req, res) => {
   }
 };
 
+const listReimbursementsForUser = async (req, res) => {
+  try {
+    const reimbursements = await reimbursementsService.listReimbursementsForUser({
+      targetUserId: req.params.userId,
+      requestingUser: req.user,
+    });
+
+    return successResponse(res, { reimbursements });
+  } catch (error) {
+    return handleError(res, error);
+  }
+};
+
 const updateStatus = async (req, res) => {
   try {
     const reimbursement = await reimbursementsService.updateReimbursementStatus({
@@ -49,5 +62,6 @@ const updateStatus = async (req, res) => {
 module.exports = {
   createReimbursement,
   listReimbursements,
+  listReimbursementsForUser,
   updateStatus,
 };

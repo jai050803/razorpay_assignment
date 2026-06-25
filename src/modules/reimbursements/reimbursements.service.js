@@ -266,6 +266,67 @@ const listReimbursements = async (requestingUser) => {
   throw new ServiceError('Forbidden', 403);
 };
 
+const listReimbursementsForUser = async ({ targetUserId, requestingUser }) => {
+  if (!targetUserId) {
+    throw new ServiceError('userId is required', 400);
+  }
+
+  const targetUserResult = await pool.query(
+    `
+      SELECT id, role
+      FROM users
+      WHERE id = $1
+    `,
+    [targetUserId]
+  );
+
+  if (targetUserResult.rowCount === 0) {
+    throw new ServiceError('User not found', 404);
+  }
+
+  const targetUser = targetUserResult.rows[0];
+
+  if (targetUser.role !== ROLES.EMP) {
+    throw new ServiceError('Can only view reimbursements for EMP users', 400);
+  }
+
+  if (!requestingUser || requestingUser.role === ROLES.EMP) {
+    throw new ServiceError('Forbidden', 403);
+  }
+
+  if (requestingUser.role === ROLES.RM) {
+    const assignmentResult = await pool.query(
+      `
+        SELECT id
+        FROM employee_rm_assignments
+        WHERE emp_id = $1
+          AND rm_id = $2
+      `,
+      [targetUserId, requestingUser.id]
+    );
+
+    if (assignmentResult.rowCount === 0) {
+      throw new ServiceError('Forbidden', 403);
+    }
+  } else if (![ROLES.APE, ROLES.CFO].includes(requestingUser.role)) {
+    throw new ServiceError('Forbidden', 403);
+  }
+
+  const reimbursementsResult = await pool.query(
+    `
+      SELECT title, description, amount, status, rm_approved, ape_approved
+      FROM reimbursements
+      WHERE user_id = $1
+      ORDER BY created_at DESC
+    `,
+    [targetUserId]
+  );
+
+  return reimbursementsResult.rows.map((reimbursement) =>
+    mapListReimbursement(reimbursement, computeEmployeeStatus(reimbursement))
+  );
+};
+
 const updateReimbursementStatus = async ({ reimbursementId, status, requestingUser }) => {
   validateApprovalRequest({ reimbursementId, status });
 
@@ -331,5 +392,6 @@ module.exports = {
   ServiceError,
   createReimbursement,
   listReimbursements,
+  listReimbursementsForUser,
   updateReimbursementStatus,
 };

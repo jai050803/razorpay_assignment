@@ -331,6 +331,8 @@ Route:
 Request body: { "reimbursementId": 7, "status": "APPROVED" }
 
 
+-----------------------------------------------------------------------------------------------------
+
 PROMPT 11 — Get Reimbursements (Role-Filtered Views)
 
 
@@ -369,4 +371,30 @@ Route:
 - GET / → [requireAuth] → listReimbursements controller
 Response: { "status": "success", "data": { "reimbursements": [...] } }
  
+-------------------------------------------------------------------------------------------------
  
+PROMPT 12 — Get Reimbursements by User ID (Subordinate Check)
+
+
+Add the GET /rest/reimbursements/:userId endpoint.
+ 
+Rules:
+- The :userId in the URL must belong to an EMP
+- The requesting user must have that EMP as their subordinate:
+  - RM: the EMP must be in their team (employee_rm_assignments)
+  - APE: the user must be an EMP (APE manages all EMPs)
+  - CFO: the user must be an EMP (CFO sees everyone)
+  - EMP: forbidden (cannot call this endpoint)
+ 
+In reimbursements.service.js, add:
+- listReimbursementsForUser({ targetUserId, requestingUser }):
+  - Fetch targetUser → 404 if not found
+  - Verify targetUser.role === 'EMP' → 400 if not (can only view EMP reimbursements)
+  - If requesting user is EMP → 403 Forbidden
+  - If requesting user is RM → check employee_rm_assignments; 403 if not their subordinate
+  - If requesting user is APE or CFO → allowed for any EMP
+  - Return all reimbursements for targetUserId
+  - Compute status the same way as in listReimbursements for EMP view
+ 
+Route:
+- GET /:userId → [requireAuth] → listReimbursementsForUser controller
